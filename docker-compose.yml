@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  # 分布式协调中心 (相当于 Zookeeper)
+  etcd:
+    image: bitnami/etcd:latest
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+    ports:
+      - "2379:2379"
+
+  # 数据库
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: chrono
+    ports:
+      - "3306:3306"
+
+  # 可视化 Etcd 的工具 (可选，方便你看数据)
+  etcdkeeper:
+    image: evildecay/etcdkeeper
+    ports:
+      - "8088:8080"
+    depends_on:
+      - etcd

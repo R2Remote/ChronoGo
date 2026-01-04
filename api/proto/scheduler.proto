@@ -1,0 +1,28 @@
+// scheduler.proto
+// 定义 Master 和 Worker 之间的 gRPC 通信接口
+
+syntax = "proto3";
+
+package scheduler;
+
+option go_package = "go-chrono/api/proto";
+
+// WorkerService 定义 Worker 提供的服务
+service WorkerService {
+  // RunJob 执行任务
+  rpc RunJob(JobRequest) returns (JobResponse);
+}
+
+// JobRequest 任务请求
+message JobRequest {
+  string job_id = 1;      // 任务 ID
+  string job_name = 2;    // 任务名称
+  string command = 3;     // 要执行的命令（第一阶段可以简单传 "Hello World"）
+}
+
+// JobResponse 任务响应
+message JobResponse {
+  bool success = 1;       // 是否成功
+  string message = 2;     // 响应消息
+}
+
