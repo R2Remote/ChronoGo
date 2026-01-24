@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package proto;
+
+// Go 也就是生成代码后的包名
+option go_package = "go-chrono/api/proto";
+
+// 定义服务：Master 呼叫 Worker 的接口
+service JobWorker {
+  // Master 调用这个方法来执行任务
+  rpc ExecuteJob (ExecuteRequest) returns (ExecuteResponse);
+}
+
+// 请求参数：Master 发过来的
+message ExecuteRequest {
+  string job_handler = 1; // 任务名称 (比如 "clean_order")
+  string job_params = 2;  // 任务参数 (比如 "date=2026-01-01")
+  int64  job_id = 3;      // 任务ID，方便记日志
+}
+
+// 响应参数：Worker 返回的
+message ExecuteResponse {
+  bool success = 1;       // 是否成功
+  string msg = 2;         // 错误信息或执行结果
+}
