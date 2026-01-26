@@ -1,40 +1,46 @@
 name: Deploy ChronoGo
 
 on:
-    push:
-        branches: ["main"]
+  push:
+    branches: ["main"]
 
 jobs:
-    build-and-deploy:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-            - name: Login to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-            - name: Build and push
-              uses: docker/build-push-action@v5
-              with:
-                  context: .
-                  push: true
-                  tags: ${{ secrets.DOCKER_USERNAME }}/chronogo:latest
+      - name: Extract Docker metadata
+        id: meta
+        run: |
+          DOCKER_USER=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          echo "image_tag=$DOCKER_USER/chronogo:latest" >> $GITHUB_OUTPUT
 
-            - name: Trigger OpsGo Deployment
-              if: success()
-              run: |
-                  curl -X POST ${{ secrets.OPSGO_URL }}/api/v1/devops/webhooks/ci \
-                  -H "Content-Type: application/json" \
-                  -d '{
-                    "repo_url": "https://github.com/'"${{ github.repository }}"'",
-                    "status": "success",
-                    "tag": "latest",
-                    "commit_sha": "'"${{ github.sha }}"'"
-                  }'
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.image_tag }}
+
+      - name: Trigger OpsGo Deployment
+        if: success()
+        run: |
+          curl -X POST ${{ secrets.OPSGO_URL }}/api/v1/devops/webhooks/ci \
+          -H "Content-Type: application/json" \
+          -d '{
+            "repo_url": "https://github.com/'"${{ github.repository }}"'",
+            "status": "success",
+            "tag": "latest",
+            "commit_sha": "'"${{ github.sha }}"'"
+          }'
