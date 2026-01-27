@@ -1,7 +1,7 @@
 package api
 
 import (
-	"ChronoGo/internal/interfaces/api/handler"
+	"github.com/R2Remote/ChronoGo/internal/interfaces/api/handler"
 
 	"github.com/gin-gonic/gin"
 )

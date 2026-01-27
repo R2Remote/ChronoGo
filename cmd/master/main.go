@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"ChronoGo/internal/interfaces/api"
+	"github.com/R2Remote/ChronoGo/internal/interfaces/api"
 )
 
 func main() {

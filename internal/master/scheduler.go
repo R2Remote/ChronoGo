@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	pb "ChronoGo/api/proto"
+	pb "github.com/R2Remote/ChronoGo/api/proto"
 
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
