@@ -2,14 +2,35 @@ package master
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"math"
 
-	"github.com/R2Remote/ChronoGo/internal/infrastructure/redis"
+	"github.com/R2Remote/ChronoGo/internal/domain/entity"
+	"github.com/R2Remote/ChronoGo/internal/infrastructure/database"
+	"github.com/R2Remote/ChronoGo/internal/infrastructure/repository"
 )
 
+type JobCache struct {
+	jobMap map[uint64]entity.Job
+}
+
+var jobCache *JobCache
+
 func ListenAndDispatch() {
-	for {
-		cmd := redis.Client.BLPop(context.Background(), 0, "jobs")
-		fmt.Println(cmd.Result())
+	log.Println("todo")
+}
+
+func init() {
+	jobCache = &JobCache{
+		jobMap: make(map[uint64]entity.Job),
+	}
+	repo := repository.NewJobRepository(database.DB)
+	jobs, _, err := repo.List(context.Background(), 1, math.MaxInt32)
+	if err != nil {
+		panic(err)
+	}
+	for _, job := range jobs {
+		log.Println("load job:", job.Name)
+		jobCache.jobMap[job.ID] = *job
 	}
 }
