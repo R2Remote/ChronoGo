@@ -2,16 +2,13 @@ package entity
 
 import "time"
 
-type Job struct {
+type Server struct {
 	ID          uint64
 	Name        string
-	Command     string
-	CronSpec    string
 	Description string
-	RetryCount  int
-	Timeout     int
+	Address     string
+	Port        int
 	IsActive    bool
-	ServerID    uint64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
