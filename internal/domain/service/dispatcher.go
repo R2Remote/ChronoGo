@@ -7,13 +7,25 @@ import (
 
 	"github.com/R2Remote/ChronoGo/internal/domain/entity"
 	"github.com/R2Remote/ChronoGo/internal/infrastructure/database"
-	"github.com/R2Remote/ChronoGo/internal/infrastructure/redis"
+	"github.com/R2Remote/ChronoGo/internal/infrastructure/redisgo"
 	"github.com/R2Remote/ChronoGo/internal/infrastructure/repository"
 )
 
 type Dispatcher struct {
 	configMap map[uint64]entity.Job
 	serverMap map[uint64]entity.Server
+}
+
+func (d *Dispatcher) Start(ctx context.Context) {
+	go d.loop(ctx)
+}
+
+func (d *Dispatcher) loop(ctx context.Context) {
+	consumer := NewTaskConsumer(d, redisgo.Client, ctx)
+	for {
+		task := consumer.FetchTask()
+		d.Dispatch(task)
+	}
 }
 
 func (d *Dispatcher) FetchJob(ctx context.Context) {
@@ -24,17 +36,17 @@ func (d *Dispatcher) FetchJob(ctx context.Context) {
 		log.Println("Load job:", job.ID, job.Name)
 		d.configMap[job.ID] = *job
 	}
-	jobService.Loop(&d.configMap)
+	go jobService.Loop(&d.configMap)
 }
 
 func (d *Dispatcher) FetchServer(ctx context.Context) {
-	serverService := NewServerService(redis.Client)
+	serverService := NewServerService(redisgo.Client)
 	servers, _ := serverService.List(ctx, 1, math.MaxInt32)
 	for _, server := range servers {
 		log.Println("Load server:", server.ID, server.Name)
 		d.serverMap[server.ID] = *server
 	}
-	serverService.Loop(&d.serverMap)
+	go serverService.Loop(&d.serverMap)
 }
 
 func NewDispatcher() *Dispatcher {

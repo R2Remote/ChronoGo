@@ -6,7 +6,7 @@ import (
 
 	"github.com/R2Remote/ChronoGo/internal/config"
 	"github.com/R2Remote/ChronoGo/internal/infrastructure/database"
-	"github.com/R2Remote/ChronoGo/internal/infrastructure/redis"
+	"github.com/R2Remote/ChronoGo/internal/infrastructure/redisgo"
 	"github.com/R2Remote/ChronoGo/internal/interfaces/api"
 	"github.com/R2Remote/ChronoGo/internal/interfaces/master"
 )
@@ -24,10 +24,10 @@ func main() {
 	defer database.CloseDB()
 
 	//init redis
-	if err := redis.InitRedis(); err != nil {
+	if err := redisgo.InitRedis(); err != nil {
 		log.Fatalf("Failed to initialize redis: %v", err)
 	}
-	defer redis.CloseRedis()
+	defer redisgo.CloseRedis()
 
 	//listen and dispatch
 	// 使用 Init 进行初始化，内部启动消费者
