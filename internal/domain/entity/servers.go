@@ -6,7 +6,7 @@ type Server struct {
 	ID          uint64
 	Name        string
 	Description string
-	Address     string
+	IP          string
 	Port        int
 	IsActive    bool
 	CreatedAt   time.Time

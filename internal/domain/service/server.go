@@ -11,12 +11,13 @@ type ServerService struct {
 	redisClient *redis.Client
 }
 
-func (s *ServerService) Loop(m *map[uint64]entity.Server) {
+func (s *ServerService) Loop(m *map[string]entity.Server) {
 
 }
 
 func (s *ServerService) List(ctx context.Context, page int, pageSize int) ([]*entity.Server, int64) {
-	panic("unimplemented")
+	// return s.redisClient.Keys(ctx, "server:*")
+	return nil, 0
 }
 
 func NewServerService(redisClient *redis.Client) *ServerService {

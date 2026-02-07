@@ -11,7 +11,7 @@ type Job struct {
 	RetryCount  int
 	Timeout     int
 	IsActive    bool
-	ServerID    uint64
+	ServerName  string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
