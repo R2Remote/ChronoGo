@@ -12,10 +12,6 @@ type JobService struct {
 	repo repository.JobRepository
 }
 
-func (j *JobService) Loop(m *map[uint64]entity.Job) {
-
-}
-
 func NewJobService(repo repository.JobRepository) *JobService {
 	return &JobService{repo: repo}
 }

@@ -27,6 +27,7 @@ func (c *TaskConsumer) FetchTask() *entity.Task {
 	result, err := c.redisClient.BLPop(c.ctx, 0, c.queueName).Result()
 	if err != nil || len(result) < 2 {
 		log.Println("Consumer: get task error:", err)
+		return nil
 	}
 
 	val := result[1]

@@ -11,10 +11,6 @@ type ServerService struct {
 	redisClient *redis.Client
 }
 
-func (s *ServerService) Loop(m *map[string]entity.Server) {
-
-}
-
 func (s *ServerService) List(ctx context.Context, page int, pageSize int) ([]*entity.Server, int64) {
 	// return s.redisClient.Keys(ctx, "server:*")
 	return nil, 0

@@ -12,11 +12,24 @@ import (
 )
 
 type Dispatcher struct {
-	configMap map[uint64]entity.Job
+	jobMap    map[uint64]entity.Job
 	serverMap map[string]entity.Server
 }
 
+func (d *Dispatcher) Init(ctx context.Context) {
+
+	// fetch all Job config
+	d.fetchJob(ctx)
+
+	// fetch all alive server
+	d.fetchServer(ctx)
+}
+
 func (d *Dispatcher) Start(ctx context.Context) {
+	go d.consume(ctx)
+}
+
+func (d *Dispatcher) consume(ctx context.Context) {
 	consumer := NewTaskConsumer(d, redisgo.Client, ctx)
 	go d.loop(consumer)
 }
@@ -24,41 +37,38 @@ func (d *Dispatcher) Start(ctx context.Context) {
 func (d *Dispatcher) loop(consumer *TaskConsumer) {
 	for {
 		task := consumer.FetchTask()
-		d.Dispatch(task)
+		d.dispatch(task)
 	}
 }
 
-func (d *Dispatcher) FetchJob(ctx context.Context) {
+func (d *Dispatcher) fetchJob(ctx context.Context) {
 	infraRepo := repository.NewJobRepository(database.DB)
 	jobService := NewJobService(infraRepo)
 	jobs, _ := jobService.List(ctx, 1, math.MaxInt32)
 	for _, job := range jobs {
 		log.Println("Load job:", job.ID, job.Name)
-		d.configMap[job.ID] = *job
+		d.jobMap[job.ID] = *job
 	}
-	go jobService.Loop(&d.configMap)
 }
 
-func (d *Dispatcher) FetchServer(ctx context.Context) {
+func (d *Dispatcher) fetchServer(ctx context.Context) {
 	serverService := NewServerService(redisgo.Client)
 	servers, _ := serverService.List(ctx, 1, math.MaxInt32)
 	for _, server := range servers {
 		log.Println("Load server:", server.ID, server.Name)
 		d.serverMap[server.Name] = *server
 	}
-	go serverService.Loop(&d.serverMap)
 }
 
 func NewDispatcher() *Dispatcher {
 	return &Dispatcher{
-		configMap: make(map[uint64]entity.Job),
+		jobMap:    make(map[uint64]entity.Job),
 		serverMap: make(map[string]entity.Server),
 	}
 }
 
-func (d *Dispatcher) Dispatch(task *entity.Task) {
-	job, ok := d.configMap[task.JobID]
-
+func (d *Dispatcher) dispatch(task *entity.Task) {
+	job, ok := d.jobMap[task.JobID]
 	if !ok {
 		log.Printf("Job %d not found in config", task.JobID)
 		return
@@ -66,10 +76,22 @@ func (d *Dispatcher) Dispatch(task *entity.Task) {
 	serverName := job.ServerName
 	server, ok := d.serverMap[serverName]
 	if !ok {
-		log.Printf("Server %d not found in config", serverName)
+		log.Printf("Server %s not found in config", serverName)
 		return
 	}
 	//发送RPC调用
+	switch task.Strategy {
+	case entity.ExecuteStrategy_Random:
+		log.Println("Random strategy")
+	case entity.ExecuteStrategy_RoundRobin:
+		log.Println("RoundRobin strategy")
+	case entity.ExecuteStrategy_Broadcast:
+		log.Println("Broadcast strategy")
+	case entity.ExecuteStrategy_Specific:
+		log.Println("Specific strategy")
+	default:
+		log.Println("Unknown strategy")
+	}
 
 	// TODO: Implement actual dispatch logic
 	log.Printf("Dispatching job: %s (ID: %d) to server: %s (ID: %d)", job.Name, job.ID, server.Name, server.ID)

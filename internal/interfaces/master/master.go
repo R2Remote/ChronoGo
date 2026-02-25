@@ -7,16 +7,14 @@ import (
 	domainService "github.com/R2Remote/ChronoGo/internal/domain/service"
 )
 
-// Init 初始化 Master 节点的核心组件
-func Init() {
+// Start 初始化 Master 节点的核心组件
+func Start() {
 
 	ctx := context.Background()
 
 	dispatcher := domainService.NewDispatcher()
 
-	dispatcher.FetchJob(ctx)
-
-	dispatcher.FetchServer(ctx)
+	dispatcher.Init(ctx)
 
 	dispatcher.Start(ctx)
 
