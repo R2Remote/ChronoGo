@@ -6,14 +6,16 @@ import (
 	"math"
 
 	"github.com/R2Remote/ChronoGo/internal/domain/entity"
+	"github.com/R2Remote/ChronoGo/internal/domain/service/strategy"
 	"github.com/R2Remote/ChronoGo/internal/infrastructure/database"
 	"github.com/R2Remote/ChronoGo/internal/infrastructure/redisgo"
 	"github.com/R2Remote/ChronoGo/internal/infrastructure/repository"
 )
 
 type Dispatcher struct {
-	jobMap    map[uint64]entity.Job
-	serverMap map[string]entity.Server
+	jobMap     map[uint64]entity.Job
+	serverMap  map[string]entity.Server
+	strategies map[entity.StrategyType]strategy.DispatchStrategy
 }
 
 func (d *Dispatcher) Init(ctx context.Context) {
@@ -23,6 +25,17 @@ func (d *Dispatcher) Init(ctx context.Context) {
 
 	// fetch all alive server
 	d.fetchServer(ctx)
+
+	// init strategies
+	d.initStrategies()
+}
+
+func (d *Dispatcher) initStrategies() {
+	d.strategies = make(map[entity.StrategyType]strategy.DispatchStrategy)
+	d.strategies[entity.Random] = strategy.NewRandomStrategy()
+	d.strategies[entity.RoundRobin] = strategy.NewRoundRobinStrategy()
+	d.strategies[entity.Broadcast] = strategy.NewBroadcastStrategy()
+	d.strategies[entity.Specific] = strategy.NewSpecificStrategy()
 }
 
 func (d *Dispatcher) Start(ctx context.Context) {
@@ -73,26 +86,18 @@ func (d *Dispatcher) dispatch(task *entity.Task) {
 		log.Printf("Job %d not found in config", task.JobID)
 		return
 	}
-	serverName := job.ServerName
-	server, ok := d.serverMap[serverName]
-	if !ok {
-		log.Printf("Server %s not found in config", serverName)
+	strategy, exists := d.strategies[task.Strategy]
+	if !exists {
+		log.Printf("Strategy %d not found in config", task.Strategy)
 		return
 	}
-	//发送RPC调用
-	switch task.Strategy {
-	case entity.ExecuteStrategy_Random:
-		log.Println("Random strategy")
-	case entity.ExecuteStrategy_RoundRobin:
-		log.Println("RoundRobin strategy")
-	case entity.ExecuteStrategy_Broadcast:
-		log.Println("Broadcast strategy")
-	case entity.ExecuteStrategy_Specific:
-		log.Println("Specific strategy")
-	default:
-		log.Println("Unknown strategy")
+	servers, err := strategy.SelectServers(&job)
+	if err != nil {
+		log.Printf("Failed to select nodes: %v", err)
+		return
 	}
-
-	// TODO: Implement actual dispatch logic
-	log.Printf("Dispatching job: %s (ID: %d) to server: %s (ID: %d)", job.Name, job.ID, server.Name, server.ID)
+	for _, server := range servers {
+		//发送RPC调用
+		log.Printf("Dispatching job: %s (ID: %d) to server: %s (ID: %d)", job.Name, job.ID, server.Name, server.ID)
+	}
 }
